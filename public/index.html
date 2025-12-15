@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Similar Song Recommendation System - Addisalem</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Roboto', sans-serif; margin:0; padding:0; background:linear-gradient(to right, #ffecd2, #fcb69f); color:#333; display:flex; flex-direction:column; align-items:center; min-height:100vh; }
+    h1 { font-size:2.5em; margin:20px 0 5px; color:#ff4b2b; }
+    p.author { margin:0 0 20px; font-size:1em; }
+    .search-container { display:flex; flex-direction:column; align-items:center; width:100%; max-width:400px; }
+    input[type="text"] { padding:12px; font-size:16px; border:none; border-radius:8px; width:100%; outline:none; }
+    ul#autocomplete { list-style:none; margin:0; padding:0; width:100%; border-radius:0 0 8px 8px; max-height:150px; overflow-y:auto; background:rgba(255,255,255,0.9); box-shadow:0 2px 5px rgba(0,0,0,0.2); }
+    ul#autocomplete li { padding:10px; cursor:pointer; transition:background 0.2s; }
+    ul#autocomplete li:hover { background:#ff4b2b; color:white; }
+    button { padding:12px 20px; font-size:16px; border:none; border-radius:8px; background-color:#ff4b2b; color:white; cursor:pointer; margin-top:10px; transition:0.3s; }
+    button:hover { background-color:#ff416c; }
+    h2 { margin-top:30px; font-size:1.5em; color:#ff4b2b; }
+    ul#results { list-style:none; padding:0; width:80%; max-width:500px; margin-top:20px; }
+    ul#results li { background:rgba(255,255,255,0.8); padding:10px 15px; margin-bottom:10px; border-radius:8px; font-weight:500; box-shadow:0 2px 5px rgba(0,0,0,0.2); transition:transform 0.2s; }
+    ul#results li:hover { transform:scale(1.03); }
+    .spinner { display:inline-block; width:24px; height:24px; border:3px solid rgba(0,0,0,0.3); border-radius:50%; border-top-color:#ff4b2b; animation: spin 1s linear infinite; margin-right:10px; vertical-align:middle; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    footer { margin-top:50px; font-size:0.9em; color:#333; }
+  </style>
+</head>
+<body>
+  <h1>🎵 Song Recommendation System</h1>
+  <p class="author">Created by Addisalem</p>
+
+  <div class="search-container">
+    <input type="text" id="songInput" placeholder="Enter a song name..." autocomplete="off"/>
+    <ul id="autocomplete"></ul>
+    <button onclick="getRecommendations()">Search</button>
+  </div>
+
+  <h2>Recommendations:</h2>
+  <ul id="results"></ul>
+
+  <footer>© 2025 By Addisalem from Ethiopia - All rights reserved</footer>
+
+  <script>
+    const songInput = document.getElementById('songInput');
+    const autocompleteList = document.getElementById('autocomplete');
+    let allSongs = [];
+
+    async function fetchSongs() {
+      try {
+        const res = await fetch('/songs');
+        allSongs = await res.json();
+      } catch (err) {
+        console.error("Could not load song names:", err);
+      }
+    }
+
+    fetchSongs();
+
+    songInput.addEventListener('input', () => {
+      const value = songInput.value.toLowerCase();
+      autocompleteList.innerHTML = '';
+      if (!value) return;
+
+      const suggestions = allSongs.filter(song => song.toLowerCase().includes(value)).slice(0,5);
+      suggestions.forEach(song => {
+        const li = document.createElement('li');
+        li.textContent = song;
+        li.addEventListener('click', () => {
+          songInput.value = song;
+          autocompleteList.innerHTML = '';
+        });
+        autocompleteList.appendChild(li);
+      });
+    });
+
+    async function getRecommendations() {
+      const song = songInput.value.trim();
+      const results = document.getElementById('results');
+      if (!song) {
+        results.innerHTML = '<li>Please enter a song name</li>';
+        return;
+      }
+
+      results.innerHTML = '<li><span class="spinner"></span> Loading recommendations...</li>';
+
+      try {
+        const res = await fetch(`/recommend?song_name=${encodeURIComponent(song)}`);
+        const data = await res.json();
+
+        if (data.error) {
+          results.innerHTML = `<li>${data.error}</li>`;
+          return;
+        }
+
+        results.innerHTML = '';
+        data.recommended_songs.forEach(song => {
+          const li = document.createElement('li');
+          li.textContent = `${song.title} – ${song.artist}`;
+          results.appendChild(li);
+        });
+      } catch (err) {
+        results.innerHTML = '<li>Error fetching recommendations</li>';
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,33 +1,47 @@
 const express = require("express");
-const recommendSongs = require("./recommender");
-
 const app = express();
-
-// IMPORTANT: Use environment PORT
 const PORT = process.env.PORT || 3000;
+const { loadCSV, recommendSongs, getAllSongs } = require("./recommender");
+const open = require("open");
 
-app.get("/", (req, res) => {
-  res.json({ message: "Song Recommendation System API" });
-});
+app.use(express.static("public"));
 
+let ready = false;
+
+// Load songs
+loadCSV()
+  .then(() => {
+    ready = true;
+    console.log("Songs loaded and TF-IDF initialized");
+  })
+  .catch((err) => console.error(" Error loading songs:", err));
+
+// Recommend songs endpoint
 app.get("/recommend", (req, res) => {
-  const songName = req.query.song_name;
-
-  if (!songName) {
-    return res.status(400).json({
-      error: "song_name query parameter is required",
+  if (!ready)
+    return res.json({
+      error: "Server is still initializing, try again shortly",
     });
-  }
 
-  const recommendations = recommendSongs(songName);
+  const { song_name } = req.query;
+  if (!song_name) return res.json({ error: "Please provide a song name" });
 
-  res.json({
-    input_song: songName,
-    recommended_songs: recommendations,
-  });
+  const result = recommendSongs(song_name);
+  if (result.error) return res.json(result);
+
+  res.json({ input_song: song_name, recommended_songs: result });
 });
 
-// ✅ LISTEN USING PORT PROVIDED BY HOST
+// All songs for autocomplete
+app.get("/songs", (req, res) => {
+  if (!ready) return res.json([]);
+  res.json(getAllSongs());
+});
+
+
+// After app.listen
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  
 });
+
