@@ -1,2 +1,16 @@
-# Song-Recommendation-System
-This project implements a content-based music recommendation system that suggests similar songs based on song metadata. The system uses TF-IDF (Term Frequency–Inverse Document Frequency) to convert song information into numerical features and cosine similarity to measure similarity between songs.
+# 🎵 Song Recommendation System (Node.js)
+
+## Description
+A content-based song recommendation system using TF-IDF and cosine similarity.
+
+## Tech Stack
+- Node.js
+- Express.js
+- Natural (NLP)
+- CSV Dataset
+
+## How to Run Locally
+
+```bash
+npm install
+npm start
